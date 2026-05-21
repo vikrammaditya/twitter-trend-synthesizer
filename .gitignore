@@ -6,6 +6,7 @@ history.json
 dashboard.html
 *.html
 *.txt
+!requirements.txt
 *.log
 
 # Python Cache
