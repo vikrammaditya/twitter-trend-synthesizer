@@ -8,7 +8,6 @@ if sys.stdout.encoding != 'utf-8':
 
 import requests
 from bs4 import BeautifulSoup
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
@@ -83,12 +82,7 @@ def select_best_trend(trends_list):
     print("Selecting the best trending topic using LangChain & Gemini...")
     Config.validate()
     
-    # Initialize the Gemini model via langchain
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=Config.GEMINI_API_KEY,
-        temperature=0.2
-    )
+    from model_fallback import invoke_with_fallback, AllModelsExhaustedError
     
     parser = JsonOutputParser(pydantic_object=TrendSelection)
     
@@ -111,20 +105,30 @@ def select_best_trend(trends_list):
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
     
-    chain = prompt | llm | parser
+    # Build chain factory for model fallback engine
+    def chain_factory(llm):
+        return prompt | llm | parser
     
     try:
         trends_str = "\n".join([f"- {t}" for t in trends_list[:40]]) # limit to top 40 for quality
-        result = chain.invoke({"trends": trends_str})
+        result = invoke_with_fallback(
+            chain_factory=chain_factory,
+            temperature=0.2,
+            invoke_kwargs={"trends": trends_str}
+        )
         
         print(f"Selected Topic: '{result['selected_topic']}'")
         print(f"Optimized Search Query: '{result['search_query']}'")
         print(f"Reason: {result['reason']}")
         return result
+
+    except AllModelsExhaustedError:
+        print("🚨 FATAL: All Gemini models exhausted during trend selection. Exiting.")
+        sys.exit(1)
         
     except Exception as e:
         print(f"Error selecting best trend: {e}")
-        # Robust fallback selection in case LLM fails or hits quota
+        # Robust fallback selection in case of non-rate-limit LLM errors
         # We try to pick a realistic looking topic from the scraped list
         fallback_topic = "SpaceX Starship Launch"
         for t in trends_list:

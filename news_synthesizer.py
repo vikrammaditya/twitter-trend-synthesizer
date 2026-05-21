@@ -6,11 +6,11 @@ if sys.stdout.encoding != 'utf-8':
     except Exception:
         pass
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 from config import Config
+from model_fallback import invoke_with_fallback, AllModelsExhaustedError
 
 class TweetSynthesis(BaseModel):
     summary: str = Field(description="A highly accurate, comprehensive 2-paragraph summary of the synthesized news, timelines, and facts based on the 20+ sources.")
@@ -23,13 +23,6 @@ def synthesize_news(sources, selected_topic):
     """Synthesize 20+ sources and draft the perfect tweet using LangChain and Gemini."""
     print(f"Synthesizing facts and drafting tweet for: '{selected_topic}'...")
     Config.validate()
-    
-    # Initialize the Gemini model via langchain
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=Config.GEMINI_API_KEY,
-        temperature=0.3
-    )
     
     parser = JsonOutputParser(pydantic_object=TweetSynthesis)
     
@@ -66,13 +59,19 @@ def synthesize_news(sources, selected_topic):
         partial_variables={"format_instructions": parser.get_format_instructions()}
     )
     
-    chain = prompt | llm | parser
+    # Build chain factory for model fallback engine
+    def chain_factory(llm):
+        return prompt | llm | parser
     
     try:
-        result = chain.invoke({
-            "topic": selected_topic,
-            "sources_block": sources_str
-        })
+        result = invoke_with_fallback(
+            chain_factory=chain_factory,
+            temperature=0.3,
+            invoke_kwargs={
+                "topic": selected_topic,
+                "sources_block": sources_str
+            }
+        )
         
         print("\n--- Fact Synthesis Complete ---")
         print(f"Primary Source: {result['primary_source_name']} ({result['primary_source_url']})")
@@ -86,10 +85,14 @@ def synthesize_news(sources, selected_topic):
             result['tweet_text'] = result['tweet_text'][:270] + "..."
             
         return result
+
+    except AllModelsExhaustedError:
+        print("🚨 FATAL: All Gemini models exhausted during news synthesis. Exiting.")
+        sys.exit(1)
         
     except Exception as e:
         print(f"Error during news synthesis: {e}")
-        # Standard robust fallback in case of errors
+        # Standard robust fallback in case of non-rate-limit errors
         fallback_tweet = f"Currently trending: {selected_topic}. Major updates are unfolding. Read the full coverage from trusted news sources. #TrendingNews [URL]"
         return {
             "summary": f"Factual synthesis of {selected_topic} could not be fully compiled due to a processing error. The topic is currently trending globally with active coverage across multiple outlets.",
