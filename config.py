@@ -18,6 +18,11 @@ class Config:
     # Target search query settings
     MAX_SOURCES = int(os.getenv("MAX_SOURCES", 25))
     
+    # Model Fallback Chain
+    # Read as comma-separated string, default to generic flash model if not provided
+    _models_env = os.getenv("GEMINI_MODEL_CHAIN", "gemini-1.5-flash")
+    GEMINI_MODEL_CHAIN = [m.strip() for m in _models_env.split(",") if m.strip()]
+    
     @classmethod
     def validate(cls):
         """Validate that critical config options are present."""
