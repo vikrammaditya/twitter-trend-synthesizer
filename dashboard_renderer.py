@@ -93,6 +93,11 @@ def render_html_dashboard(history_data, output_file="dashboard.html"):
             top: 0;
             z-index: 100;
             padding: 1.25rem 2rem;
+        }}
+
+        .header-inner {{
+            max-width: 1600px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -153,12 +158,12 @@ def render_html_dashboard(history_data, output_file="dashboard.html"):
         }}
 
         .main-container {{
-            max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 2rem;
+            max-width: 1600px;
+            margin: 2.5rem auto;
+            padding: 0 3rem;
             display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 2rem;
+            grid-template-columns: 280px 1fr;
+            gap: 2.5rem;
         }}
 
         /* History Sidebar */
@@ -306,12 +311,13 @@ def render_html_dashboard(history_data, output_file="dashboard.html"):
             gap: 2rem;
         }}
 
-        @media (max-width: 1100px) {{
+        @media (max-width: 1200px) {{
             .dashboard-grid {{
                 grid-template-columns: 1fr;
             }}
             .main-container {{
                 grid-template-columns: 1fr;
+                padding: 0 2rem;
             }}
         }}
 
@@ -647,13 +653,15 @@ def render_html_dashboard(history_data, output_file="dashboard.html"):
 <body>
 
     <header>
-        <div class="logo-section">
-            <i class="fa-brands fa-x-twitter"></i>
-            <h1>Trend Synthesizer</h1>
-        </div>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            Agent Active
+        <div class="header-inner">
+            <div class="logo-section">
+                <i class="fa-brands fa-x-twitter"></i>
+                <h1>Trend Synthesizer</h1>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                Agent Active
+            </div>
         </div>
     </header>
 
