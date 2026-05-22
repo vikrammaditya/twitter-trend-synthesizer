@@ -20,12 +20,17 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from config import Config
 
 # Ordered list of Gemini models to attempt, from most preferred to least.
-# The last model in this list gets extra retries (5 instead of 3).
+# Only models with active API quota are listed. The last model gets extra
+# retries (5 instead of 3).
+#
+# Quota caps (free tier):
+#   gemini-3.5-flash      — RPM: 5,  TPM: 250K, RPD: 20
+#   gemini-2.5-flash      — RPM: 5,  TPM: 250K, RPD: 20
+#   gemini-3.1-flash-lite — RPM: 15, TPM: 250K, RPD: 500  (best headroom)
 GEMINI_MODEL_CHAIN = [
+    "gemini-3.5-flash",
     "gemini-2.5-flash",
-    "gemini-2.5-pro",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
+    "gemini-3.1-flash-lite",
 ]
 
 DEFAULT_RETRIES = 3
