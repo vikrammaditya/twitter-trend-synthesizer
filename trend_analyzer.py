@@ -8,7 +8,7 @@ if sys.stdout.encoding != 'utf-8':
 
 import requests
 from bs4 import BeautifulSoup
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 from pydantic import BaseModel, Field
 import json
